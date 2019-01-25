@@ -11,7 +11,7 @@ import { Entry } from "./entry.model";
 })
 export class EntryService {
 
-  private apiPath: string = "api/entries";
+  private apiPath: string = "/api/entries";
 
   constructor(private http: HttpClient) { }
 
@@ -31,8 +31,8 @@ export class EntryService {
     )
   }
 
-  create(entry: Entry): Observable<Entry> {
-    return this.http.post(this.apiPath, entry)
+  create(entry: Entry): Observable<any> {
+     return this.http.post(this.apiPath, entry)
   }
 
   update(entry: Entry): Observable<Entry> {
@@ -55,9 +55,17 @@ export class EntryService {
 
   // PRIVATE METHODS
   private jsonDataToEntries(jsonData: any[]): Entry[] {
-    const entry: Entry[] = [];
-    jsonData.forEach(element => entry.push(element as Entry));
-    return entry;
+    const entries: Entry[] = [];
+    // jsonData.forEach(element => entry.push(element as Entry));
+    /**
+     * Da forma acima, faz apenas um cast (conversão)
+     * Desta forma abaixo, converte para o Object, para conseguir usar o método paidText() na tela.
+     */
+    jsonData.forEach(element => {
+      const entry = Object.assign(new Entry(), element)
+      entries.push(entry);
+    });
+    return entries;
   }
 
   private jsonDataToEntry(jsonData: any): Entry {
