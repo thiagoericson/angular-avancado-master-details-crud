@@ -11,7 +11,7 @@ import { Category } from "./category.model";
 })
 export class CategoryService {
 
-  private apiPath: string = "api";
+  private apiPath: string = "http://localhost:4200/api/categories";
 
   constructor(private http: HttpClient) { }
 
@@ -26,7 +26,7 @@ export class CategoryService {
     const url = `${this.apiPath}/${id}`;
 
     return this.http.get(url).pipe(
-      catchError(this.handleError),
+      catchError(this.handleError), 
       map(this.jsonDataToCategory)
     )
   }
