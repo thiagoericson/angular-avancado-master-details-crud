@@ -39,7 +39,7 @@ export class CategoryService {
     const url = `${this.apiPath}/${category.id}`;
 
     return this.http.put(url, category).pipe(
-      catchError(this.handleError),
+        catchError(this.handleError),
       map(() => category) // força o retorno do mesmo objeto, pois no put não tem retorno do objeto
     )
   }
