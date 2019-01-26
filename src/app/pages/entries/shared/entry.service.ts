@@ -4,6 +4,8 @@ import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Observable, throwError } from "rxjs";
 import { map, catchError, flatMap } from "rxjs/operators";
 
+import { CategoryService } from "../../categories/shared/category.service";
+
 import { Entry } from "./entry.model";
 
 @Injectable({
@@ -13,7 +15,7 @@ export class EntryService {
 
   private apiPath: string = "/api/entries";
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private categoryService: CategoryService) { }
 
   getAll(): Observable<Entry[]> {
     return this.http.get(this.apiPath).pipe(
@@ -26,21 +28,37 @@ export class EntryService {
     const url = `${this.apiPath}/${id}`;
 
     return this.http.get(url).pipe(
-      catchError(this.handleError), 
+      catchError(this.handleError),
       map(this.jsonDataToEntry)
     )
   }
 
   create(entry: Entry): Observable<any> {
-     return this.http.post(this.apiPath, entry)
+    return this.categoryService.getById(entry.categoryId).pipe(
+      /**
+       * usa-se o flatMap() pois é um Observable dentro de outro Observable
+      */
+      flatMap(category => {
+        entry.category = category;
+        return this.http.post(this.apiPath, entry).pipe(
+          catchError(this.handleError),
+          map(this.jsonDataToEntry)
+        )
+      })
+    ) 
   }
 
-  update(entry: Entry): Observable<Entry> {
+  update(entry: Entry): Observable<Entry> { // Depois dos dois pontos é o tipo do retorno
     const url = `${this.apiPath}/${entry.id}`;
 
-    return this.http.put(url, entry).pipe(
-        catchError(this.handleError),
-      map(() => entry) // força o retorno do mesmo objeto, pois no put não tem retorno do objeto
+    return this.categoryService.getById(entry.categoryId).pipe(
+      flatMap(category => { // category é o retorno da requisição
+        entry.category = category
+        return this.http.put(url, entry).pipe(
+          catchError(this.handleError),
+          map(() => entry) // força o retorno do mesmo objeto, pois no put não tem retorno do objeto
+        )
+      })
     )
   }
 
@@ -72,7 +90,7 @@ export class EntryService {
     return jsonData as Entry;
   }
 
-  private handleError(error: any): Observable<any>{
+  private handleError(error: any): Observable<any> {
     console.log("ERRO NA REQUISIÇÃO =>", error)
     return throwError(error)
   }
