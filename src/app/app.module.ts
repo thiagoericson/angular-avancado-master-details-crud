@@ -1,4 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 import { NgModule } from '@angular/core';
 import { HttpClientModule  } from "@angular/common/http";
 
@@ -15,6 +16,7 @@ import { InMemoryDatabase } from "./in-memory-database";
   imports: [
     BrowserModule,
     AppRoutingModule,
+    BrowserAnimationsModule,
     HttpClientModule,
     // intercepta todas as requisições HTTP da aplicação
     HttpClientInMemoryWebApiModule.forRoot(InMemoryDatabase)
