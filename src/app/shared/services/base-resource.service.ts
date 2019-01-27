@@ -27,14 +27,20 @@ export abstract class BaseResourceService<T extends BaseResourceModel>{
      * Do contrário, se precisar de 10 dependencias, todas as classes que extendem, teriam que 
      * passar essas 10 dependencias no super(), para poder usar essa class abstract.
      */
-    constructor(protected apiPath: string, protected injector: Injector) { 
+    constructor(
+        protected apiPath: string,
+        protected injector: Injector,
+        protected jsonDataToResourceFn: (jsonData: any) => T // um método como parametro, que recebe o jsonData como parametro e retorna um objeto do tipo T
+    ) {
         this.http = injector.get(HttpClient);
     }
 
     getAll(): Observable<T[]> {
         return this.http.get(this.apiPath).pipe(
-            catchError(this.handleError),
-            map(this.jsonDataToResources)
+            // Os métodos são executados na ordem que estão
+            map(this.jsonDataToResources.bind(this)), // passar o .bind(this) indica qual o contexto que deve ser usado quando a função for chamada.
+            // se o handleError ficar por ultimo, sempre vai pegar qualquer erro que ocorra
+            catchError(this.handleError)
         )
     }
 
@@ -42,15 +48,19 @@ export abstract class BaseResourceService<T extends BaseResourceModel>{
         const url = `${this.apiPath}/${id}`;
 
         return this.http.get(url).pipe(
-            catchError(this.handleError),
-            map(this.jsonDataToResource)
+            // Os métodos são executados na ordem que estão
+            map(this.jsonDataToResource.bind(this)), // passar o .bind(this) indica qual o contexto que deve ser usado quando a função for chamada.
+            // se o handleError ficar por ultimo, sempre vai pegar qualquer erro que ocorra
+            catchError(this.handleError)
         )
     }
 
     create(resource: T): Observable<T> {
         return this.http.post(this.apiPath, resource).pipe(
-            catchError(this.handleError),
-            map(this.jsonDataToResource)
+            // Os métodos são executados na ordem que estão
+            map(this.jsonDataToResource.bind(this)), // passar o .bind(this) indica qual o contexto que deve ser usado quando a função for chamada.
+            // se o handleError ficar por ultimo, sempre vai pegar qualquer erro que ocorra
+            catchError(this.handleError)
         )
     }
 
@@ -58,8 +68,10 @@ export abstract class BaseResourceService<T extends BaseResourceModel>{
         const url = `${this.apiPath}/${resource.id}`;
 
         return this.http.put(url, resource).pipe(
-            catchError(this.handleError),
-            map(() => resource) // força o retorno do mesmo objeto, pois no put não tem retorno do objeto
+            // Os métodos são executados na ordem que estão
+            map(() => resource), // força o retorno do mesmo objeto, pois no put não tem retorno do objeto
+            // se o handleError ficar por ultimo, sempre vai pegar qualquer erro que ocorra
+            catchError(this.handleError)
         )
     }
 
@@ -67,8 +79,10 @@ export abstract class BaseResourceService<T extends BaseResourceModel>{
         const url = `${this.apiPath}/${id}`;
 
         return this.http.delete(url).pipe(
-            catchError(this.handleError), // manipulador de erro
-            map(() => null)
+            // Os métodos são executados na ordem que estão
+            map(() => null),
+            // se o handleError ficar por ultimo, sempre vai pegar qualquer erro que ocorra
+            catchError(this.handleError) // manipulador de erro
         )
     }
 
@@ -76,12 +90,17 @@ export abstract class BaseResourceService<T extends BaseResourceModel>{
 
     protected jsonDataToResources(jsonData: any[]): T[] {
         const resources: T[] = [];
-        jsonData.forEach(element => resources.push(element as T));
+        jsonData.forEach(
+            // Roda um loop, chamando a function enviada via parametro no constructor.
+            element => resources.push(this.jsonDataToResourceFn(element))
+        );
         return resources;
     }
 
     protected jsonDataToResource(jsonData: any): T {
-        return jsonData as T; // Converte jsonData para o formato do Tipo <T> (Category, Entry, etc)
+        // return jsonData as T; // Converte jsonData para o formato do Tipo <T> (Category, Entry, etc)
+        // usa a function enviada via parametro para converter o jsonData para um Object do tipo T.
+        return this.jsonDataToResourceFn(jsonData); 
     }
 
     protected handleError(error: any): Observable<any> {

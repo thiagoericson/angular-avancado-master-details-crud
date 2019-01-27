@@ -15,7 +15,11 @@ import { flatMap } from "rxjs/operators";
 export class EntryService extends BaseResourceService<Entry> {
 
   constructor(protected injector: Injector, private categoryService: CategoryService) {
-    super("api/entries", injector)
+    super("api/entries", injector, Entry.fromJson);
+    /**
+     * Entry.fromJson - Passar o nome da função sem "()", não executa a função. Neste caso, estamos apenas
+     * dizendo que é essa função que deverá ser executada quando for solicitado. 
+     */
   }
 
   create(entry: Entry): Observable<any> {
@@ -45,25 +49,5 @@ export class EntryService extends BaseResourceService<Entry> {
         return super.update(entry)
       })
     )
-  }
-
-  // PRIVATE METHODS
-
-  protected jsonDataToResources(jsonData: any[]): Entry[] {
-    const entries: Entry[] = [];
-    // jsonData.forEach(element => entry.push(element as Entry));
-    /**
-     * Da forma acima, faz apenas um cast (conversão)
-     * Desta forma abaixo, converte para o Object, para conseguir usar o método paidText() na tela.
-     */
-    jsonData.forEach(element => {
-      const entry = Object.assign(new Entry(), element)
-      entries.push(entry);
-    });
-    return entries;
-  }
-
-  protected jsonDataToResource(jsonData: any): Entry {
-    return jsonData as Entry;
   }
 }
