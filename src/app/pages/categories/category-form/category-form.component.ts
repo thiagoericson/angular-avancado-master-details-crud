@@ -13,7 +13,7 @@ import { CategoryService } from "../shared/category.service";
 })
 export class CategoryFormComponent extends BaseResourceFormComponent<Category> {
 
-  constructor(protected categoryService: CategoryService, protected injector: Injector) { 
+  constructor(protected categoryService: CategoryService, protected injector: Injector) {
     super(injector, new Category(), categoryService, Category.fromJson)
   }
 
@@ -30,7 +30,7 @@ export class CategoryFormComponent extends BaseResourceFormComponent<Category> {
   }
 
   protected editionPageTitle(): string {
-    const categoryName = this.resource.name || "";
-    return "Editando categoria: " + categoryName;
+    const resourceName = this.resource.name || "";
+    return "Editando categoria: " + resourceName;
   }
 }
