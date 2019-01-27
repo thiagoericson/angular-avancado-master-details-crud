@@ -12,6 +12,13 @@ interface BreadCrumbItem {
 })
 export class BreadCrumbComponent implements OnInit {
 
+  /**
+      <app-bread-crumb
+        [items]="[{text: 'Categorias', link: '/categories'}, {text: pageTitle}]"
+        ></app-bread-crumb>
+    
+    A declaração abaixo, @Input(), permite que a tag do selector receba parametro via property binding, conforme acima.
+  */
   @Input() items: Array<BreadCrumbItem> = [];
 
   constructor() { }
