@@ -18,6 +18,7 @@ export class BreadCrumbComponent implements OnInit {
         ></app-bread-crumb>
     
     A declaração abaixo, @Input(), permite que a tag do selector receba parametro via property binding, conforme acima.
+    ? Não precisou passar o nome da tag dentro do Input() pois é associativo ao nome da variavel 'items' ? 
   */
   @Input() items: Array<BreadCrumbItem> = [];
 
