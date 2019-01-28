@@ -6,25 +6,35 @@ import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 
 import { HttpClientModule  } from "@angular/common/http";
 
+import { RouterModule } from "@angular/router";
+
 import { HttpClientInMemoryWebApiModule } from "angular-in-memory-web-api";
-import { InMemoryDatabase } from "./../in-memory-database"; 
+import { InMemoryDatabase } from "./../in-memory-database";
+import { NavbarComponent } from './components/navbar/navbar.component'; 
 
 @NgModule({
-  declarations: [],
+  declarations: [
+    NavbarComponent
+  ],
   imports: [
     CommonModule,
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule, 
     // intercepta todas as requisições HTTP da aplicação
-    HttpClientInMemoryWebApiModule.forRoot(InMemoryDatabase)
+    HttpClientInMemoryWebApiModule.forRoot(InMemoryDatabase),
+    RouterModule
   ],
   // precisa exportar, para que modules que importem o core.module 
   //   possam enxergar estes modules importados do core.modules
   exports: [
+    // shared modules
     BrowserModule,
     BrowserAnimationsModule,
-    HttpClientModule
+    HttpClientModule,
+
+    // shared components
+    NavbarComponent
   ]
 })
 export class CoreModule { }
