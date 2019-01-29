@@ -16,6 +16,7 @@ export class PageHeaderComponent implements OnInit {
         ></app-page-header>
    */
   @Input('page-title') pageTitle: string;
+  @Input('show-button') showButton: boolean = true;
   @Input('button-class') buttonClass: string;
   @Input('button-text') buttonText: string;
   @Input('button-link') buttonLink: string;
