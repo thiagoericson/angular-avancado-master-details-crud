@@ -1,97 +1,89 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { Injectable, Injector } from '@angular/core';
 
-import { Observable, throwError } from "rxjs";
-import { map, catchError, flatMap } from "rxjs/operators";
+import { BaseResourceService } from "../../../shared/services/base-resource.service";
 
 import { CategoryService } from "../../categories/shared/category.service";
 
 import { Entry } from "./entry.model";
 
+import { Observable } from "rxjs";
+import { flatMap, catchError, map } from "rxjs/operators";
+
+import * as moment from "moment";
+
 @Injectable({
   providedIn: 'root'
 })
-export class EntryService {
+export class EntryService extends BaseResourceService<Entry> {
 
-  private apiPath: string = "/api/entries";
-
-  constructor(private http: HttpClient, private categoryService: CategoryService) { }
-
-  getAll(): Observable<Entry[]> {
-    return this.http.get(this.apiPath).pipe(
-      catchError(this.handleError),
-      map(this.jsonDataToEntries)
-    )
+  constructor(protected injector: Injector, private categoryService: CategoryService) {
+    super("api/entries", injector, Entry.fromJson);
+    /**
+     * Entry.fromJson - Passar o nome da função sem "()", não executa a função. Neste caso, estamos apenas
+     * dizendo que é essa função que deverá ser executada quando for solicitado. 
+     */
   }
 
-  getById(id: number): Observable<Entry> {
-    const url = `${this.apiPath}/${id}`;
-
-    return this.http.get(url).pipe(
-      catchError(this.handleError),
-      map(this.jsonDataToEntry)
-    )
-  }
-
-  create(entry: Entry): Observable<any> {
-    return this.categoryService.getById(entry.categoryId).pipe(
-      /**
-       * usa-se o flatMap() pois é um Observable dentro de outro Observable
-      */
-      flatMap(category => {
-        entry.category = category;
-        return this.http.post(this.apiPath, entry).pipe(
-          catchError(this.handleError),
-          map(this.jsonDataToEntry)
-        )
-      })
-    ) 
+  create(entry: Entry): Observable<Entry> {
+    // return this.categoryService.getById(entry.categoryId).pipe(
+    //   /**
+    //    * usa-se o flatMap() pois é um Observable dentro de outro Observable
+    //   */
+    //   flatMap(category => {
+    //     entry.category = category;
+    //     // return this.http.post(this.apiPath, entry).pipe(
+    //     //   catchError(this.handleError),
+    //     //   map(this.jsonDataToResource)
+    //     // )
+    //     return super.create(entry)
+    //   })
+    // )
+    // .bind(this) serve para forçar o contexto independente de onde a função for chamada
+    // no caso desta class, é chamado no flatMap, onde ele muda o contexto, por isso devemos forçar
+    return this.setCategoryAndSendToServer(entry, super.create.bind(this))
   }
 
   update(entry: Entry): Observable<Entry> { // Depois dos dois pontos é o tipo do retorno
-    const url = `${this.apiPath}/${entry.id}`;
+    // return this.categoryService.getById(entry.categoryId).pipe(
+    //   flatMap(category => { // category é o retorno da requisição
+    //     entry.category = category
+    //     // return this.http.put(url, entry).pipe(
+    //     //   catchError(this.handleError),
+    //     //   map(() => entry) // força o retorno do mesmo objeto, pois no put não tem retorno do objeto
+    //     // )
+    //     return super.update(entry)
+    //   })
+    // )
+    // .bind(this) serve para forçar o contexto independente de onde a função for chamada
+    // no caso desta class, é chamado no flatMap, onde ele muda o contexto, por isso devemos forçar
+    return this.setCategoryAndSendToServer(entry, super.update.bind(this))
+  }
 
+  getByMonthAndYear(month: number, year: number): Observable<Entry[]> {
+    return this.getAll().pipe(
+      // fazendo desta forma pois o banco de dados é simulado em memória, 
+      // com uma API real, filtra no próprio back-end
+      map(entries => this.filterByMonthAndYear(entries, month, year))
+    )
+  }
+
+  private setCategoryAndSendToServer(entry: Entry, sendFn: any): Observable<Entry> {
     return this.categoryService.getById(entry.categoryId).pipe(
-      flatMap(category => { // category é o retorno da requisição
-        entry.category = category
-        return this.http.put(url, entry).pipe(
-          catchError(this.handleError),
-          map(() => entry) // força o retorno do mesmo objeto, pois no put não tem retorno do objeto
-        )
-      })
+      flatMap(category => {
+        entry.category = category;
+        return sendFn(entry)
+      }),
+      catchError(this.handleError)
     )
   }
 
-  delete(id: number): Observable<any> {
-    const url = `${this.apiPath}/${id}`;
-
-    return this.http.delete(url).pipe(
-      catchError(this.handleError), // manipulador de erro
-      map(() => null)
-    )
-  }
-
-  // PRIVATE METHODS
-  private jsonDataToEntries(jsonData: any[]): Entry[] {
-    const entries: Entry[] = [];
-    // jsonData.forEach(element => entry.push(element as Entry));
-    /**
-     * Da forma acima, faz apenas um cast (conversão)
-     * Desta forma abaixo, converte para o Object, para conseguir usar o método paidText() na tela.
-     */
-    jsonData.forEach(element => {
-      const entry = Object.assign(new Entry(), element)
-      entries.push(entry);
-    });
-    return entries;
-  }
-
-  private jsonDataToEntry(jsonData: any): Entry {
-    return jsonData as Entry;
-  }
-
-  private handleError(error: any): Observable<any> {
-    console.log("ERRO NA REQUISIÇÃO =>", error)
-    return throwError(error)
+  private filterByMonthAndYear(entries: Entry[], month: number, year: number) {
+    return entries.filter(entry => {
+      const entryDate = moment(entry.date, "DD/MM/YYYY");
+      // entryDate.month() + 1; // pois começa no 0.
+      const monthMatches = entryDate.month() + 1 == month;
+      const yearMatches = entryDate.year() == year;
+      if(monthMatches && yearMatches) return entry;
+    })
   }
 }
