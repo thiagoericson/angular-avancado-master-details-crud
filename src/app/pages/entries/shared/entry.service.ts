@@ -7,7 +7,9 @@ import { CategoryService } from "../../categories/shared/category.service";
 import { Entry } from "./entry.model";
 
 import { Observable } from "rxjs";
-import { flatMap, catchError } from "rxjs/operators";
+import { flatMap, catchError, map } from "rxjs/operators";
+
+import * as moment from "moment";
 
 @Injectable({
   providedIn: 'root'
@@ -57,6 +59,14 @@ export class EntryService extends BaseResourceService<Entry> {
     return this.setCategoryAndSendToServer(entry, super.update.bind(this))
   }
 
+  getByMonthAndYear(month: number, year: number): Observable<Entry[]> {
+    return this.getAll().pipe(
+      // fazendo desta forma pois o banco de dados é simulado em memória, 
+      // com uma API real, filtra no próprio back-end
+      map(entries => this.filterByMonthAndYear(entries, month, year))
+    )
+  }
+
   private setCategoryAndSendToServer(entry: Entry, sendFn: any): Observable<Entry> {
     return this.categoryService.getById(entry.categoryId).pipe(
       flatMap(category => {
@@ -65,5 +75,15 @@ export class EntryService extends BaseResourceService<Entry> {
       }),
       catchError(this.handleError)
     )
+  }
+
+  private filterByMonthAndYear(entries: Entry[], month: number, year: number) {
+    return entries.filter(entry => {
+      const entryDate = moment(entry.date, "DD/MM/YYYY");
+      // entryDate.month() + 1; // pois começa no 0.
+      const monthMatches = entryDate.month() + 1 == month;
+      const yearMatches = entryDate.year() == year;
+      if(monthMatches && yearMatches) return entry;
+    })
   }
 }
